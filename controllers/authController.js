@@ -13,7 +13,7 @@ const generateToken = (id, institutionId, role) => {
 // @desc    Send OTP to user's mobile for signup
 // @route   POST /api/auth/send-otp
 exports.sendOtp = async (req, res) => {
-  const { institutionId } = req.body;
+  const { institutionId, action } = req.body;
 
   try {
     if (!institutionId) {
@@ -21,7 +21,12 @@ exports.sendOtp = async (req, res) => {
     }
 
     const userExists = await User.findOne({ institutionId });
-    if (userExists) {
+    
+    if (action === 'forgot-password' && !userExists) {
+      return res.status(400).json({ error: 'User does not exist. Please create an account first.' });
+    }
+    
+    if (action !== 'forgot-password' && userExists) {
       return res.status(400).json({ error: 'User already exists' });
     }
 
@@ -138,6 +143,42 @@ exports.signup = async (req, res) => {
   }
 };
 
+// @desc    Reset password for existing user
+// @route   POST /api/auth/reset-password
+exports.resetPassword = async (req, res) => {
+  const { institutionId, otp, newPassword } = req.body;
+
+  try {
+    if (!institutionId || !otp || !newPassword) {
+      return res.status(400).json({ error: 'Please provide institutionId, OTP, and newPassword' });
+    }
+
+    const otpRecord = await Otp.findOne({ institutionId });
+    if (!otpRecord) {
+      return res.status(400).json({ error: 'OTP expired or not found. Please request a new one.' });
+    }
+    
+    if (otpRecord.otp !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP' });
+    }
+
+    const user = await User.findOne({ institutionId });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    await Otp.deleteOne({ institutionId });
+
+    res.status(200).json({ message: 'Password reset successful' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 // @desc    Login user
 // @route   POST /api/auth/login
 exports.login = async (req, res) => {
@@ -170,6 +211,32 @@ exports.getMe = async (req, res) => {
     const user = await User.findById(req.user.id).select('-password');
     res.json(user);
   } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
+// @desc    Change password for logged in user
+// @route   PUT /api/auth/change-password
+exports.changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  try {
+    const user = await User.findById(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    if (!(await user.comparePassword(currentPassword))) {
+      return res.status(401).json({ error: 'Incorrect current password' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'Password changed successfully' });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Server error' });
   }
 };
