@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema({
   email: { type: String }, // optional, depending on ECAP
   password: { type: String, required: true },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  designation: { type: String, default: '' },
   profileImage: { type: String } // Not really needed in DB since we construct it dynamically, but kept for future.
 }, { timestamps: true });
 

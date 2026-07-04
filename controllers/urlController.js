@@ -125,7 +125,7 @@ exports.deleteUrl = async (req, res) => {
 exports.getAllUrls = async (req, res) => {
   try {
     // Populate user to get creator info
-    const urls = await Url.find().populate('userId', 'name institutionId').sort({ createdAt: -1 });
+    const urls = await Url.find().populate('userId', 'name institutionId designation').sort({ createdAt: -1 });
     const baseUrl = process.env.BASE_URL || `${req.protocol}://${req.get('host')}`;
     
     const mappedUrls = urls.map(url => ({

@@ -117,12 +117,14 @@ exports.signup = async (req, res) => {
 
     const name = employeeData.employeename || employeeData.EmployeeName || 'Employee';
     const email = employeeData.EmailId || employeeData.email || '';
+    const designation = employeeData.designation || employeeData.Designation || '';
 
     // Create user
     const user = await User.create({
       institutionId,
       name,
       email,
+      designation,
       password,
       role: 'user' // Default role
     });
@@ -134,6 +136,7 @@ exports.signup = async (req, res) => {
       _id: user._id,
       institutionId: user.institutionId,
       name: user.name,
+      designation: user.designation,
       role: user.role,
       token: generateToken(user._id, user.institutionId, user.role),
     });
@@ -192,6 +195,7 @@ exports.login = async (req, res) => {
         _id: user._id,
         institutionId: user.institutionId,
         name: user.name,
+        designation: user.designation,
         role: user.role,
         token: generateToken(user._id, user.institutionId, user.role),
       });
