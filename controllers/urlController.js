@@ -5,7 +5,7 @@ const shortid = require('shortid');
 // @route   POST /api/urls
 exports.createUrl = async (req, res) => {
   try {
-    const { longUrl, expiresAt } = req.body;
+    const { longUrl, expiresAt, type } = req.body;
 
     if (!longUrl) {
       return res.status(400).json({ error: 'longUrl is required' });
@@ -27,6 +27,7 @@ exports.createUrl = async (req, res) => {
     const newUrl = await Url.create({
       longUrl,
       shortCode,
+      type: type || 'short_url',
       userId: req.user.id,
       expiresAt: expiryDate
     });
